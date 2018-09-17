@@ -1,0 +1,31 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+\title{Controlling a Servo Motor with PWM}
+\date{19 September 2018}
+\author{
+	Team 4:
+	\\
+	Jacob Aubertine
+	\\
+	Mathieu Bolduc-Clayton
+	\\
+	Sal Fernandes
+}
+
+\begin{document}
+	\pagenumbering{gobble}
+	\maketitle
+	\newpage
+	\pagenumbering{arabic}
+
+	\section{SG90 Servo Motor}
+	The goal of the first lab meeting was to control a servo motor using pulse-width modulation (PWM). Since the group was not familiar with the specific motor given (SG90), its datasheet was found online. The servo could only rotate 180 degrees, and the duty cycle determined what position it would be in. The recommended period for the PWM signal was 20 ms (50 Hz), with a duty cycle of between 5\% and 10\%. A 5\% duty cycle (1 ms) rotated the motor to -90 degrees, while a 10\% duty cycle rotated the motor to +90 degrees. There were three wires leading from the motor: orange was PWM, red was VCC, and brown was ground.
+
+	\section{Function Generator Setup}
+	To create the PWM signal, the function generator was used. The pulse setting was used, with a 50 Hz frequency and 5 Vpp amplitude as defined in the datasheet. To get the signal to go from 0 to 5 V instead of -2.5 V to 2.5 V, a 2.5 V\textsubscript{DC} offset was used. The edge width was left unchanged at 50 ns.
+
+\end{document}
