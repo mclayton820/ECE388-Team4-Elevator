@@ -68,7 +68,12 @@
 		\caption{Hardware block diagram}
 		\label{fig:hardware_block_diagram}
 	\end{figure}
-
+	% figure
+	\begin{figure}[h!]
+		\includegraphics[width=\linewidth]{swbd.png}
+		\caption{Software block diagram}
+		\label{fig:software_block_diagram}
+	\end{figure}
 	\section{Description of subsystems}
 	    \subsection{Height/position}
 	    The elevator will be moved by a DC motor connected to a cable that winds and unwinds around a pulley above the shaft in order to bring the elevator up and down. The IR distance sensor measures the distance (using a range of voltages to specify the distance the object is) between the top of the shaft (near the pulley) and the elevator. This allows for knowledge of the elevators position at all times, ensuring it reaches the proper floor. Some sort of track would be ideal to allow the elevator to move smoothly without any unwanted rotation. Unwanted movement would likely disturb the IR sensor's measurements. A buzzer will be used to signify that a floor is reached and the doors are opening.
