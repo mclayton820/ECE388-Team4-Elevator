@@ -1,0 +1,314 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{bigfoot}
+\usepackage{hyperref}
+
+\title{Initial Prototyping}
+\date{20 October 2018}
+\author{
+	ECE 388
+	\\
+	\\
+	Team 4:
+	\\
+	Jacob Aubertine
+	\\
+	Mathieu Bolduc-Clayton
+	\\
+	Sal Fernandes
+}
+
+\begin{document}
+	\pagenumbering{gobble}
+	\maketitle
+	\newpage
+	\pagenumbering{arabic}
+	\tableofcontents
+	\newpage
+
+    \section{Abstract}
+    This report will cover the various methods materials and test plans used for this secure elevator control system. The description of each part of the project and the respective test plans for each part are shown.
+    \section{Introduction}
+    The secure elevator control system has the goal of of safely transporting authorized personnel from one floor to another floor. To accomplish the device is broken into several pieces. There are LED indicators, a buzzer, servo, and DC motor to serve as output to either show the user the status of the elevator or to move the elevator itself. There are IR sensors, a button matrix, and a magnetic card reader for user input as a way to direct how the elevator behaves. A micro controller ties all the parts together by driving output based on user input.
+    \section{Methods}
+        \subsection{Equipment and materials}
+        
+        
+        \subsection{Problem statement}
+	    The goal of this project is to design and construct a secure private elevator control system. All aspects are to be designed to integrate together as an embedded system. 
+	
+	%%%%% BLOCK DIAGRAMS MAY NEED TO BE UPDATED %%%%%
+	%%%%% vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv %%%%%
+	
+    	The concept block diagram (Figure \ref{fig:concept_block_diagram}), which encompasses both hardware and software, provides a general overview of the elevator's systems. The hardware block diagram (Figure \ref{fig:hardware_block_diagram}) provides an overview of just the hardware aspects of the project and they interact with each other. The software block diagram (Figure \ref{fig:software_block_diagram}) shows a flowchart of the elevator operations, providing the logic for the system.
+	
+		% figure
+	    \begin{figure}[!ht]
+	        \begin{center}
+		    \includegraphics[width=230pt]{cbd.png}
+		    \caption{Concept block diagram}
+	    	\label{fig:concept_block_diagram}
+	    	\end{center}
+	    \end{figure}
+	
+    	% figure
+    	\begin{figure}[!ht]
+	        \begin{center}
+	    	\includegraphics[width=230pt]{hwbd.png}
+	    	\caption{Hardware block diagram}
+	    	\label{fig:hardware_block_diagram}
+	    	\end{center}
+	    \end{figure}
+	
+	    % figure
+	    \begin{figure}[!ht]
+	        \begin{center}
+	        \includegraphics[width=230pt]{swbd.png}
+		    \caption{Software block diagram}
+		    \label{fig:software_block_diagram}
+		    \end{center}
+	    \end{figure}
+	  
+        \subsection{Subsystem descriptions}
+        \subsubsection{Height/position}
+	    The elevator will be moved by a DC motor connected to a cable that winds and unwinds around a pulley above the shaft in order to bring the elevator up and down. The IR distance sensor measures the distance (using a range of voltages to specify the distance the object is) between the top of the shaft (near the pulley) and the elevator. This allows for knowledge of the elevators position at all times, ensuring it reaches the proper floor. Some sort of track would be ideal to allow the elevator to move smoothly without any unwanted rotation. Unwanted movement would likely disturb the IR sensor's measurements. A buzzer will be used to signify that a floor is reached and the doors are opening.
+	    
+	    \subsubsection{Security}
+	    A magnetic stripe card reader will be used as the main form of security. It can allow access to individuals if they swipe a valid card. Once a valid card is swiped, they can call the elevator. The elevators doors should stay closed when not in use, so a swipe is required to call the elevator and have its doors open. LED indicators exist on the card reader itself which provide feedback to the user if the swiped card is valid or invalid. The current plan is to use UMass Dartmouth IDs, with a certain number specified as valid.
+	    
+	    \subsubsection{Safety}
+	    An emergency stop button will exist that halts all function and stops the elevator sounding the buzzer until the button is pressed again. There will be an IR breakbeam sensor to detect if there is anything in the way of the open door. If there is something blocking the way, the door is to remain open until the obstruction is no longer there.
+	    
+	    \subsubsection{User Interface}
+	    Many buttons will be needed for this elevator system. Currently the elevator has four floors. There will need to be a call button on each of these floors (4 total), a button inside the elevator for each floor (4 total), plus an emergency stop button. Altogether, nine buttons are specified. A 4x4 button matrix would give more than enough buttons. If more than the nine are needed, it will be very easy to use the remaining buttons on the matrix. These buttons will be mounted outside of the elevator for testing and easy access.
+	    
+	    
+	    
+	    \subsubsection{Power}
+	    There are two main power regulators within the current design 5V and 12V. Both of these regulators will get the same DC power in from the power plug giving both sides up to 1.5A to current and there rated voltages as an output. On the 12V line only the DC motor and the respective motor controller will be connected to it, but the motor will use most of the available current from the regulator. The 5V line will power the rest of the device including the servo for moving the door, the buzzer, LED indicators,two IR sensors, and the micro-controller.
+	    
+        \subsection{Test procedures}
+        Thus far, we have tested some systems, components, and circuits. We have tested the LED circuit, the IR distance sensor, the servo motor, and the button matrix. The DC motor could not be tested without the drive for said motor; the ADC for the IR distance sensor was not tested do to time; the IR break beam sensor was not tested do to not having a sensor yet; the the magnetic tester was not tested do to not having the female ps/2 port; buzzer was not tested do to not having buzzer.
+        
+        \subsubsection{IR distance sensor}
+         The IR distance sensor output a voltage that varies based on how far the infrared beam sensed it traveled. A test was conducted with the sensor supplied 5 V, and the output voltage being measured on the digital multimeter. A meter stick was used to measure the distance, and it was laid flat on the table with the sensor at the 0 cm mark. The datasheet\cite{project_overview:IR_datasheet} stated that a white surface provided the most accurate readings because it was more reflective than darker shades. A notebook was moved at set intervals from the sensor and the voltages were recorded. The results of the test are shown in Table \ref{tab:table2}.
+        
+        \subsubsection{LED circuit}
+        The LED circuit shown in Figure \ref{fig:led_schem} was tested independently to verify its correct function. The 1 k$\Omega$ resistors were present to limit the current through the diodes. The polarity of the LEDs were designed so that the 328PB would sink current instead of source current. The microcontroller can only output so much current, so by sinking instead of sourcing the current this should not be an issue. It does mean that a low signal (0 V) would be output to light an LED, and a high signal (5 V) would turn it off. Each LED was connected to a different pin of the microcontroller, in this test the pins were PORTD0 through PORTD3. The code used the "\_delay\_ms()" function to turn all LEDs on for 1000 ms (1 second) and then off for 1000 ms. The output pins should produce a 0.5 Hz square wave, provided the correct CPU frequency was defined in the code.
+        
+        % figure
+	    \begin{figure}[!ht]
+	        \begin{center}
+	        \includegraphics[width=230pt]{LED_schem.png}
+		    \caption{LED schematic}
+		    \label{fig:led_schem}
+		    \end{center}
+	    \end{figure}
+        
+        \subsubsection{Servo motor}
+        %%% NEED REFERENCE FOR 
+        To test the servo motor with the 328PB, a timer had to be set up in PWM mode. The datasheet for the SG90 servo motor specifies a 50 Hz signal, with duty cycles between 5\% (1 ms) and 10\% (2 ms). Initially, timer 0 was to be used, but even with the largest prescaler a frequency of 50 Hz would not be possible. This is shown in the calculations below. The maximum prescaler is 1024, so a 1250 prescaler would not be possible.
+        
+        \begin{equation}
+            \begin{split}\label{eq:timer0}
+            F_{OCO} &= \frac{f_{clk}}{N(256)} \\
+            50 Hz &= \frac{16 MHz}{N(256)} \\
+            N &= \frac{16 MHz}{12,800} \\
+            N &= 1250
+            \end{split}
+        \end{equation}
+        
+       
+        Calculations were found online \cite{project_overview:servo_tutorial} that used timer ticks to calculate the frequencies, shown below. Timer 1 was used as it is a 16 bit instead of an 8 bit timer. In Fast PWM mode, timer 1 has 65,536 total ticks.
+        
+        \begin{equation}
+            \begin{split}\label{eq:timer1}
+            freq &= \frac{f_{clk}}{N * ticks)} \\
+            N &= \frac{16 MHz}{50 Hz * 65,536)} \\
+            N &= 4.9\\
+            \text{rounded up to the next highest prescaler:}\\
+            N &= 8\\
+            \text{plug N back in to find frequency}\\
+            freq &= \frac{16 MHz}{8 * 65,536)} \\
+            freq &= 30.5 Hz\\
+            \text{30.5 Hz is too slow, should be 50 Hz}
+            ticks &= \frac{16 MHz}{8 * 50 Hz}\\
+            ticks &= 40,000
+            \end{split}
+        \end{equation}
+        
+        So The ICR1 register should equal 40,000 with a prescaler of 8 to produce a 50 Hz square wave. The duty cycles were just percentages of that value, so the OCR1A register should equal 2000 for a 5\% duty cycle, and 4000 for a 10\% duty cycle.
+        
+        \subsubsection{Button matrix}
+        To test the 4x4 button matrix the 8 pins (pins [1:4] for rows; pins [5:8] for columns) were connected to PortD [0:3] (rows) and PortC [0:3] (columns). Using timer0 (PD6) and timer2 (PB3) on the 328PB to send a signal with varying frequencies based on what row and column a button was pressed on. Table \ref{tab:table1} and \ref{tab:table4} shows the different frequencies for each row and column on the 4x4 button matrix. Using the built in oscilloscope on the analog discovery 2 we were able to measure the frequencies of the signals being produced on timer0 and timer2. Figure \ref{fig:buttontest} shows the signals being produced after a button press.
+        
+        \begin{table}[!ht]
+  	        \begin{center}
+                \caption{IR Distance Sensor Voltages}
+    		    \label{tab:table1}
+    		    \begin{tabular}{r|r}
+      			    \textbf{Row} & \textbf{Frequencies (Hz)} \\
+			        \hline
+      			    1 & 697\\
+      			    2 & 770\\
+      			    3 & 852\\
+      			    4 & 941\\
+   			    \end{tabular}
+  	        \end{center}
+	    \end{table}
+	    
+	            \begin{table}[!ht]
+  	        \begin{center}
+                \caption{IR Distance Sensor Voltages}
+    		    \label{tab:table4}
+    		    \begin{tabular}{r|r}
+      			    \textbf{Columns} & \textbf{Frequencies (Hz)} \\
+			        \hline
+      			    1 & 1209\\
+      			    2 & 1336\\
+      			    3 & 1477\\
+      			    4 & 1633\\
+   			    \end{tabular}
+  	        \end{center}
+	    \end{table}
+	    
+	    \begin{figure}[!ht]
+	        \begin{center}
+		    \includegraphics[width=230pt]{buttontest.PNG}
+		    \caption{Signal from 4x4 matrix}
+	    	\label{fig:buttontest}
+	    	\end{center}
+	    \end{figure}
+	    
+    \section{Experimental Results}
+        \subsection{IR distance sensor}
+        A stepper motor was initially considered for controlling the elevator's height, but since it might not produce smooth movement a DC motor was chosen instead. This has not been tested yet, but it will be once a motor controller is received.
+    
+        A servo motor\cite{project_overview:servo_datasheet} was chosen to control the door. Depending on the positive pulse width it can be in many different positions. The servo replaced the previous solenoid selection because of the seduced current requirement and the lack of extra hardware requirements. Although the it is slightly more difficult to program compared to the trivial driving of the solenoid but, the servo takes time to move making it easier for safety checks and responses.
+    
+	    % figure
+	    
+	    
+        % table
+        \begin{table}[!ht]
+  	        \begin{center}
+                \caption{IR Distance Sensor Voltages}
+    		    \label{tab:table2}
+    		    \begin{tabular}{r|r}
+      			    \textbf{Distance (cm)} & \textbf{Voltage (V)} \\
+			        \hline
+      			    5 & 3.11\\
+      			    10 & 2.2\\
+      			    15 & 1.6\\
+      			    20 & 1.2\\
+				    25 & 1.0\\
+				    30 & 0.890 \\
+				    35 & 0.780 \\
+				    40 & 0.680 \\
+				    45 & 0.620 \\
+				    50 & 0.530 \\
+				    55 & 0.480 \\
+				    60 & 0.440 \\
+				    65 & 0.400 \\
+				    70 & 0.320 \\
+				    75 & 0.050 \\
+				    80 & 0.030 \\
+   			    \end{tabular}
+  	        \end{center}
+	    \end{table}
+	
+    \section{Discussion}
+        \subsection{Future test plans}
+	    Most of the tests specified involve hardware and software working together. Very few tests, at this point, involve just hardware or just software. The subsections are divided roughly by subsystem or component. Since tests often involve multiple subsystems, they are grouped with what was considered most relevant.
+	    \subsubsection{DC motor}
+	    \begin{itemize}
+            \item When connected to the motor controller, try making the motor rotate in both directions and verify that it does so.
+            \item Measure the time it takes for the elevator to travel from the bottom floor to the top, and top floor to the bottom. These times should be the same. Repeat the measurements with different levels of PWM to determine which speed looks most reasonable.
+            \item Using PWN to slow down the speed of the elevator as it approaches the desired floor as to not stop abruptly.  
+        \end{itemize}
+        
+	    \subsubsection{IR distance sensor}
+	    \begin{itemize}
+	        \item The sensor by itself had been tested by using a voltmeter to measure its voltage at specific distances.
+	        \item After connecting the sensor to the micro controller ADC, test the readings at different distances.
+	        \item Record the readings again, this time with the sensor at the top of the elevator shaft. Get positions for each floor based on the distance from the sensor.
+	        \item Once the positions are known, have the elevator travel to each floor from above and below (if possible) to measure how far the elevator is physically from the desired position. The elevator should line up from both directions.
+	        \item Set a distance for the motor to stop at, and see how long it takes for it to stop, and record how far it stopped from the desired location.
+	    \end{itemize}
+	    
+	    \subsubsection{Buzzer}
+	    \begin{itemize}
+	        \item Observe the timer output from the micro-controller and verify that the frequency of the waveform matches what was specified.
+	        \item Send the elevator to a floor and verify that the buzzer buzzes when it reaches the floor.
+	        \item Press the emergency stop button, verify that the buzzer buzzes until the button is pressed again.
+	    \end{itemize}
+	    
+	    \subsubsection{Emergency stop}
+	    \begin{itemize}
+	        \item Press emergency stop to stop elevator. Try to press buttons to call elevator and send it to another floor. The elevator should not move until the emergency stop is disengaged.
+	    \end{itemize}
+	    
+	    \subsubsection{Security: magnetic stripe reader}
+	    \begin{itemize}
+	        \item With the reader connected to the micro-controller, record the data received from swiping a card. This card and its data will be considered valid. Try to get a match by swiping other cards. Ideally they should not match and should be rejected.
+	        \item The elevator should not be called until a valid card is swiped. Try different input combinations to move elevator or open a door before a valid card is swiped. Also try this when an invalid card is swiped. Repeat the same tests by swiping a valid card and ensure that the doors open and the elevator does move (if not on the floor).
+	    \end{itemize}
+	    
+	    \subsubsection{Door}
+	    \begin{itemize}
+	        \item The door should open shortly after a floor is reached. This time will be measured and adjusted as necessary, and must be after the elevator stops moving.
+	        \item The door should then close some time after a floor is reached and remained closed until a valid card is swiped. This time will also be measured and adjusted to ensure passengers have enough time to safely exit the elevator.
+	        \item The door should remain closed while moving, and the elevator should continue to its destination before moving to another floor. The call buttons should be pressed for different floors while the elevator is moving to make sure it continues and the doors remain closed until stopped.
+	        \item If at a floor with the door open and something is detecting in the path of the door, the door should remain open and the elevator should not move until the path is clear for a time. The call buttons should be pressed while the path is blocked to test if the elevator does actually move. The time it takes the door to close after the path has been cleared will be measured to ensure it can safely be cleared and remain clear.
+	    \end{itemize}
+	    
+	    \subsubsection{Buttons}
+	    \begin{itemize}
+	        \item The button matrix should be tested independently to ensure every button can be properly detected.
+	        \item The emergency stop button should halt all function and continue to until it is pressed again. This should be tested when the elevator is in different positions, such as when it is moving between floors and stopped at a floor.
+	    \end{itemize}
+    \section{Conclusions}
+    
+    We still have a few more components and systems to test at later dates. The tests we have conducted so far have been successful and we are happy with the results we have gotten.
+    
+    \section{Reflection}
+    
+    %%% maybe talk about the parts we didn't end up using
+    %%% like solenoid, stepper motor, and why
+    A few things were changed from our initial plans for what will be used in the design. While thinking about how the elevator would operator it was recommended that we use a DC motor instead of a stepper motor for a smoother "ride" for the elevator. We felt that was a valid point and switched our future testing to the DC motor. Looking into the solenoid we realized too much current would've been used to power the solenoid, so instead we opted to use a servo motor; making for easier programming and a simpler circuit.
+    
+    \section{Appendix}
+    
+    
+    
+    
+    
+        \subsection{Team member contributions}
+	    The individual contributions of team members were not measured by time. Instead, a general outline of what each member has done is provided in Table \ref{tab:table3}. The project so far has mostly been broadly designing subsystems, making decisions on how to implement the subsystems, and testing individual components, which all group members have contributed to.
+	    \begin{table}[!ht]
+  	    \begin{center}
+            \caption{Team member contributions}
+    		\label{tab:table3}
+    		\begin{tabular}{r|l}
+      			\textbf{Member} & \textbf{Contributions} \\
+			    \hline
+      			Jacob Aubertine & Wrote entirety of servo motor report and this\\
+      			 & report. Will focus on both hardware and software. \\
+      			Mathieu Bolduc-Clayton & Created hardware and software block diagrams.\\
+      			 & Will focus on hardware.\\
+      			Sal Fernandes & Created concept block diagram. Will focus\\
+      			 & on software.\\
+   			\end{tabular}
+  	    \end{center}
+	\end{table}
+
+    \newpage
+    \nocite{*}
+    \bibliographystyle{IEEEtran}
+    \bibliography{project_overview}
+
+\end{document}

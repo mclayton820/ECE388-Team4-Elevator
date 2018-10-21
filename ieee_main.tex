@@ -1,0 +1,25 @@
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{dtk-logos} % for BibTeX stylized logo
+
+\title{IEEE \BibTeX{} style}
+\author{ShareLaTeX Templates}
+\date{January 2014}
+
+\begin{document}
+
+\maketitle
+
+This document is an example of IEEE style of \BibTeX{} using in bibliography management. 
+\begin{itemize}
+\item The \texttt{IEEEexample.bib} file consists an example \BibTeX{} database for the official \texttt{IEEEtran.bst} BibTeX style file.
+\item The \texttt{IEEEabrv.bib} file consists a \BibTeX{} bibliography string definitions of the abbreviated titles of IEEE journals and magazines and online publications.
+\item The \texttt{IEEEfull.bib} file consists \BibTeX{} bibliography string definitions of the full titles of IEEE journals and magazines and online publications.
+\end{itemize}
+
+\nocite{*}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,IEEEexample}
+
+\end{document}
