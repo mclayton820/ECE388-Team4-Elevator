@@ -1,183 +1,195 @@
 /*
- * ece263_lab4.c
- * Lab 4: Digital Music Keyboard
- * Created: 4/1/2018 8:57:30 PM
- * Authors : Jacob Aubertine, Michael Benker
- */
- 
+ * ECE388_v1-0.c
+ *
+ * Created: 10/15/2018 7:56:02 PM
+ * Author : Jacob Aubertine
+ */ 
+
+#define F_CPU 16000000
+
 #include <avr/io.h>
-#include <avr/interrupt.h>
-#include <stdint.h>
 #include <util/delay.h>
- 
- 
+
+
+
 struct whichButton{
-   	uint8_t column;
-   	uint8_t row;
+	uint8_t column;
+	uint8_t row;
 };
- 
-void Timer0Setup();
-void Timer2Setup();
+
+void ButtonSetup();
 void ButtonPressed(struct whichButton *ptr);
-void ButtonToTimer0(struct whichButton button);
-void ButtonToTimer2(struct whichButton button);
- 
+void Timer0Setup();
+void ButtonPressed(struct whichButton *ptr);
+void ButtonToNum(struct whichButton *ptr, uint8_t *buttonnum);
+void ADC_Pot2Intensity();
+
 int main(void)
 {
-   	/* I/O pin setup */
-   	DDRC &= 0xF0; // sets bits 0-3 of Port C as inputs
-   	DDRD |= 0x0F; // sets bits 0-3 of Port D as outputs
-   	PORTC |= 0x0F;   	// enables pull-up resistors
-   	DDRD |= (1 << PORTD6); 	// sets OC0A as output (PD6)
-   	DDRB |= (1 << PORTB3); 	// sets OC2A as output (PB3)
-   	
-   	PORTD &= 0xF0;   	// sets bits 0-3 of Port D to 0 to detect button press
-/* 	
-   	// pin change interrupt control register, set PCIE1 to enable PCMSK1 scan
-   	PCICR |= (1 << PCIE1);
-   	PCMSK1 = 0x0F;         // sets PCINT8-11 to trigger an interrupt on state change
-   	
-   	//sei();               	// turn on interrupts globally
-*/
-   	struct whichButton button;
-   	struct whichButton *ptrButton = &button;
-   	
-   	Timer0Setup();
-   	Timer2Setup();
-   	
-	while (1)  
-	{
-          	ButtonPressed(ptrButton);
-          	// PORTD &= 0xF0;	// sets bits 0-3 of Port D to 0 to detect button press
-          	ButtonToTimer0(button);
-          	ButtonToTimer2(button);
-          	_delay_ms(20);
-          	
-          	if ( (button.column != 0) && (button.row != 0) ){
-                 	TCCR0B |= (0b11 << CS00);     	// sets timer0 to %64 prescaler
-                 	TCCR2B |= (0b11 << CS20);     	// sets timer2 to %32 prescaler
-          	}
-          	
-          	else{
-                 	TCCR0B &= ~(0b11 << CS00);    	// turns timer0 clock source off
-                 	TCCR2B &= ~(0b11 << CS20);    	// turns timer2 clock source off
-          	}
-	}
+    ButtonSetup();
+	struct whichButton button;
+	struct whichButton *ptrButton = &button;
+	
+	// ADC setup
+	DDRC &= 11101111;  // Make PORTC4 (ADC4) for the selected ADC channel an input pin.	
+	ADCSRA = (1<<ADEN)|(0b111<<ADPS0);	// enables ADC and sets prescaler to %128
+	ADMUX = (0b00<<REFS0)|(1<<ADLAR)|(4<<MUX0);	// voltage reference is AREF, ADC data register left adjusted, ADC4 as input
+
+	DDRB |= 6; //Set pin PB1 & PB2 as output for OC1A & OC1B
+	// Timer 1 setup pwm
+	TCCR1A = 0xA2; // Set OC1A & OC1B; WMG1[1]. Table 18-8 in Datasheet. & Table 18-9.
+	TCCR1B = 0x18; // Set WMG1[2] & WMG1[3]; tABLE 18-9
+	TCNT1 = 0; // clear counter
+	ICR1 = 40000; // count of 40000 for a 20ms period or 50 Hz cycle
+	OCR1A = 2900; // start in the middle between 900 & 4900
+	OCR1B = 2900; //
+	TCCR1B |= 2; //set clock to divide by 8 and start TABLE
+
+	uint8_t adcvals;
+	uint8_t row;
+	uint8_t column;
+	
+	static uint16_t posit[2]={1500,5000}; //position of servo
+	
+    while (1) 
+    {
+		
+		ADCSRA |= (1<<ADSC);	// starts conversion
+		while( (ADCSRA&(1<<ADIF)) == 0);	// waits for conversion to complete
+		adcvals = ADCH;		// copies ADCH register to adcvals variable
+		
+		
+		/*
+		PORTD &= 0;
+		_delay_ms(500);
+		PORTD |= 0x0F;
+		_delay_ms(500);
+		*/
+		
+		for (uint16_t ii = 0;ii < 2;ii++)
+		{
+			OCR1A = posit[ii];
+			_delay_ms(2000);
+		}
+    }
 }
- 
+
+void ButtonSetup(){
+	DDRC &= 0b1110000;	// sets bits 0-4 of Port C as inputs (PC4 is ADC4)
+	DDRD |= 0x0F;	// sets bits 0-3 of Port D as outputs
+	PORTC |= 0x0F;	// enables pull-up resistors
+	DDRD |= (1 << PORTD6);	// sets OC0A as output (PD6)
+	
+	PORTD &= 0xF0;	// sets bits 0-3 of Port D to 0 to detect button press	
+}
+
+/*
 void Timer0Setup(){
-   	TCCR0A = (0b01 << COM0A0) | (0b10 << WGM00); // toggles on compare match, CTC mode
-   	TCCR0B = (0 << WGM02) | (0b000 << CS00); // no prescaler, timer0 stopped initially
+	TCCR0A = (0b01 << COM0A0) | (0b10 << WGM00);	// toggles on compare match, CTC mode
+	TCCR0B = (0 << WGM02) | (0b000 << CS00);		// no prescaler, timer0 stopped initially
+	OCR0A = 70;
 }
- 
-void Timer2Setup(){
-   	TCCR2A = (0b01 << COM2A0) | (0b10 << WGM20);	// toggles on compare match, CTC mode
-   	TCCR2B = (0 << WGM22) | (0b000 << CS20);    	// no prescaler, timer2 stopped initially
-}
- 
+*/
+
 void ButtonPressed(struct whichButton *ptr){
-   	PORTD &= 0xF0;   	// sets bits 0-3 of Port D to 0 to detect button press
-   	if( (PINC & (1 << PINC3)) == 0 ){           	// column 1
-          	ptr->column = 1;
-          	PORTD = ~(1 << PORTD3);
-          	if( (PINC & (1 << PINC3)) == 0 )            	// row 1
-                 	ptr->row = 1;
-          	PORTD = ~(1 << PORTD2);
-          	if( (PINC & (1 << PINC3)) == 0 )            	// row 2
-                 	ptr->row = 2;
-          	PORTD = ~(1 << PORTD1);
-          	if( (PINC & (1 << PINC3)) == 0 )            	// row 3
-                 	ptr->row = 3;
-          	PORTD = ~(1 << PORTD0);
-          	if( (PINC & (1 << PINC3)) == 0 )            	// row 4
-                 	ptr->row = 4;
-   	}
-   	else if( (PINC & (1 << PINC2)) == 0 ){      	// column 2
-          	ptr->column = 2;
-          	PORTD = ~(1 << PORTD3);
-          	if( (PINC & (1 << PINC2)) == 0 )            	// row 1
-                 	ptr->row = 1;
-          	PORTD = ~(1 << PORTD2);
-          	if( (PINC & (1 << PINC2)) == 0 )            	// row 2
-                 	ptr->row = 2;
-          	PORTD = ~(1 << PORTD1);
-          	if( (PINC & (1 << PINC2)) == 0 )            	// row 3
-                 	ptr->row = 3;
-          	PORTD = ~(1 << PORTD0);
-          	if( (PINC & (1 << PINC2)) == 0 )            	// row 4
-                 	ptr->row = 4;
-   	}
-   	else if( (PINC & (1 << PINC1)) == 0 ){      	// column 3
-          	ptr->column = 3;
-          	PORTD = ~(1 << PORTD3);
-          	if( (PINC & (1 << PINC1)) == 0 )            	// row 1
-                 	ptr->row = 1;
-          	PORTD = ~(1 << PORTD2);
-          	if( (PINC & (1 << PINC1)) == 0 )            	// row 2
-                 	ptr->row = 2;
-          	PORTD = ~(1 << PORTD1);
-          	if( (PINC & (1 << PINC1)) == 0 )            	// row 3
-                 	ptr->row = 3;
-          	PORTD = ~(1 << PORTD0);
-          	if( (PINC & (1 << PINC1)) == 0 )            	// row 4
-                 	ptr->row = 4;
-   	}
-   	else if( (PINC & (1 << PINC0)) == 0 ){      	// column 4
-          	ptr->column = 4;
-          	PORTD = ~(1 << PORTD3);
-          	if( (PINC & (1 << PINC0)) == 0 )            	// row 1
-                 	ptr->row = 1;
-          	PORTD = ~(1 << PORTD2);
-          	if( (PINC & (1 << PINC0)) == 0 )            	// row 2
-                 	ptr->row = 2;
-          	PORTD = ~(1 << PORTD1);
-          	if( (PINC & (1 << PINC0)) == 0 )            	// row 3
-                 	ptr->row = 3;
-          	PORTD = ~(1 << PORTD0);
-          	if( (PINC & (1 << PINC0)) == 0 )            	// row 4
-                 	ptr->row = 4;
-   	}
-   	else{
-          	ptr->column = 0;
-          	ptr->row = 0;
-   	}
+	PORTD &= 0xF0;	// sets bits 0-3 of Port D to 0 to detect button press
+	if( (PINC & (1 << PINC3)) == 0 ){			// column 1
+			ptr->column = 1;
+		PORTD = ~(1 << PORTD3);
+		if( (PINC & (1 << PINC3)) == 0 )			// row 1
+			ptr->row = 1;
+		PORTD = ~(1 << PORTD2);
+		if( (PINC & (1 << PINC3)) == 0 )			// row 2
+			ptr->row = 2;
+		PORTD = ~(1 << PORTD1);
+		if( (PINC & (1 << PINC3)) == 0 )			// row 3
+			ptr->row = 3;
+		PORTD = ~(1 << PORTD0);
+		if( (PINC & (1 << PINC3)) == 0 )			// row 4
+			ptr->row = 4;
+	}
+	else if( (PINC & (1 << PINC2)) == 0 ){		// column 2
+			ptr->column = 2;
+		PORTD = ~(1 << PORTD3);
+		if( (PINC & (1 << PINC2)) == 0 )			// row 1
+			ptr->row = 1;
+		PORTD = ~(1 << PORTD2);
+		if( (PINC & (1 << PINC2)) == 0 )			// row 2
+			ptr->row = 2;
+		PORTD = ~(1 << PORTD1);
+		if( (PINC & (1 << PINC2)) == 0 )			// row 3
+			ptr->row = 3;
+		PORTD = ~(1 << PORTD0);
+		if( (PINC & (1 << PINC2)) == 0 )			// row 4
+			ptr->row = 4;
+	}
+	else if( (PINC & (1 << PINC1)) == 0 ){		// column 3
+			ptr->column = 3;
+		PORTD = ~(1 << PORTD3);
+		if( (PINC & (1 << PINC1)) == 0 )			// row 1
+			ptr->row = 1;
+		PORTD = ~(1 << PORTD2);
+		if( (PINC & (1 << PINC1)) == 0 )			// row 2
+			ptr->row = 2;
+		PORTD = ~(1 << PORTD1);
+		if( (PINC & (1 << PINC1)) == 0 )			// row 3
+			ptr->row = 3;
+		PORTD = ~(1 << PORTD0);
+		if( (PINC & (1 << PINC1)) == 0 )			// row 4
+			ptr->row = 4;
+	}
+	else if( (PINC & (1 << PINC0)) == 0 ){		// column 4
+			ptr->column = 4;
+		PORTD = ~(1 << PORTD3);
+		if( (PINC & (1 << PINC0)) == 0 )			// row 1
+			ptr->row = 1;
+		PORTD = ~(1 << PORTD2);
+		if( (PINC & (1 << PINC0)) == 0 )			// row 2
+			ptr->row = 2;
+		PORTD = ~(1 << PORTD1);
+		if( (PINC & (1 << PINC0)) == 0 )			// row 3
+			ptr->row = 3;
+		PORTD = ~(1 << PORTD0);
+		if( (PINC & (1 << PINC0)) == 0 )			// row 4
+			ptr->row = 4;
+	}
+	else{
+		ptr->column = 0;
+		ptr->row = 0;
+	}
+	
+	_delay_ms(20);
 }
- 
-void ButtonToTimer0(struct whichButton button){
-   	switch(button.row) {
-          	case 1 :
-                 	OCR0A = 178;     	// 697 Hz
-                 	break;
-          	case 2 :
-                 	OCR0A = 161;     	// 770 Hz
-                 	break;
-          	case 3 :
-                 	OCR0A = 146;     	// 852 Hz
-                 	break;
-          	case 4 :
-                 	OCR0A = 132;     	// 941 Hz
-                 	break;
-          	default :
-                 	break;
-   	}
-   	
+
+void ButtonToNum(struct whichButton *ptr, uint8_t *buttonnum){
+	if ( ptr->column == 2 && ptr->row == 4 )
+		*buttonnum = 0;
+	else if ( ptr->column == 1 && ptr->row == 3 )
+		*buttonnum = 1;
+	else if ( ptr->column == 2 && ptr->row == 3 )
+		*buttonnum = 2;
+	else if ( ptr->column == 3 && ptr->row == 3 )
+		*buttonnum = 3;
+	else if ( ptr->column == 1 && ptr->row == 2 )
+		*buttonnum = 4;
+	else if ( ptr->column == 2 && ptr->row == 2 )
+		*buttonnum = 5;
+	else if ( ptr->column == 3 && ptr->row == 2 )
+		*buttonnum = 6;
+	else if ( ptr->column == 1 && ptr->row == 1 )
+		*buttonnum = 7;
+	else if ( ptr->column == 2 && ptr->row == 1 )
+		*buttonnum = 8;
+	else if ( ptr->column == 3 && ptr->row == 1 )
+		*buttonnum = 9;
 }
- 
-void ButtonToTimer2(struct whichButton button){
-   	switch(button.column) {
-          	case 1 :
-                 	OCR2A = 206;     	// 1209 Hz
-                 	break;
-          	case 2 :
-                 	OCR2A = 186;     	// 1336 Hz
-                 	break;
-          	case 3 :
-                 	OCR2A = 168;     	// 1477 Hz
-                 	break;
-          	case 4 :
-                 	OCR2A = 152;     	// 1633 Hz
-                 	break;
-          	default :
-                 	break;
-   	}
+
+void ADC_Pot2Intensity(){
+	ADCSRA |= (1<<ADSC);	// starts conversion
+	while( (ADCSRA&(1<<ADIF)) == 0);	// waits for conversion to complete
+	MAX7221_Intensity(ADCH>>4);		// looks at 4 highest bits for intensity
+}
+
+void Door(){
+	  
 }
